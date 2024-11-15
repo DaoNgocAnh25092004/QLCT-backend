@@ -1,15 +1,12 @@
 const mongoose = require('mongoose');
 
 const Schema = mongoose.Schema;
-
-const User = new Schema(
+const Account = new Schema(
     {
         userId: {
             type: Schema.Types.ObjectId,
-            required: true,
-            default: () => new mongoose.Types.ObjectId(),
         },
-        name: {
+        username: {
             type: String,
             required: true,
             unique: true,
@@ -28,7 +25,6 @@ const User = new Schema(
             enum: ['user', 'admin'],
             default: 'user',
         },
-
         phone: {
             type: String,
             required: true,
@@ -39,4 +35,4 @@ const User = new Schema(
     },
 );
 
-module.exports = mongoose.model('Account', User, 'Accounts');
+module.exports = mongoose.model('Account', Account, 'Accounts');
