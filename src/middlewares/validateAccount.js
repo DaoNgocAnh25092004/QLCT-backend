@@ -1,13 +1,13 @@
-const User = require('../models/Account');
+const Account = require('../models/Account');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
 const { generateAccessToken, generateRefreshToken, verifyRefreshToken } = require('./jwtAuth');
 
 const validateSignUp = async (req, res, next) => {
-    const { name, email, password, phone } = req.body;
+    const { username, email, password, phone } = req.body;
 
-    if (!name || !email || !password || !phone) {
+    if (!username || !email || !password || !phone) {
         return res.status(400).json({ error: 'All fields are required' });
     }
 
@@ -21,15 +21,15 @@ const validateSignUp = async (req, res, next) => {
     }
 
     try {
-        const existingUser = await User.findOne({
-            $or: [{ name }, { email }],
+        const existingAccount = await Account.findOne({
+            $or: [{ username }, { email }],
         });
 
-        if (existingUser) {
-            if (existingUser.name === name) {
-                return res.status(400).json({ error: 'name already in use' });
+        if (existingAccount) {
+            if (existingAccount.username === username) {
+                return res.status(400).json({ error: 'Username already in use' });
             }
-            if (existingUser.email === email) {
+            if (existingAccount.email === email) {
                 return res.status(400).json({ error: 'Email already in use' });
             }
         }
@@ -52,21 +52,21 @@ const validateLogin = async (req, res, next) => {
     }
 
     try {
-        const user = await User.findOne({ email }).select('+password');
+        const account = await Account.findOne({ email }).select('+password');
 
-        if (!user || !(await bcrypt.compare(password, user.password))) {
+        if (!account || !(await bcrypt.compare(password, account.password))) {
             return res.status(400).json({ error: 'Invalid email or password' });
         }
 
         const accessToken = generateAccessToken({
-            id: user._id,
-            role: user.role,
-            userId: user.userId,
+            id: account._id,
+            role: account.role,
+            userId: account.userId,
         });
         const refreshToken = generateRefreshToken({
-            id: user._id,
-            role: user.role,
-            userId: user.userId,
+            id: account._id,
+            role: account.role,
+            userId: account.userId,
         });
 
         res.cookie('refreshToken', refreshToken, {
@@ -74,10 +74,10 @@ const validateLogin = async (req, res, next) => {
             secure: false,
         });
 
-        req.user = {
-            id: user._id,
-            email: user.email,
-            role: user.role,
+        req.account = {
+            id: account._id,
+            email: account.email,
+            role: account.role,
             accessToken,
         };
 
@@ -90,7 +90,7 @@ const validateLogin = async (req, res, next) => {
 };
 
 const validateUpdateUser = async (req, res, next) => {
-    const { name, email, password, phone, role } = req.body;
+    const { username, email, password, phone, role } = req.body;
     const userId = req.params.id;
 
     // Kiểm tra xem userId có tồn tại hay không
@@ -105,7 +105,7 @@ const validateUpdateUser = async (req, res, next) => {
         }
 
         // Nếu không có trường nào được cung cấp, trả về lỗi
-        if (!name && !email && !phone && !password && !role) {
+        if (!username && !email && !phone && !password && !role) {
             return res.status(400).json({ error: 'At least one field is required to update' });
         }
 
@@ -131,15 +131,15 @@ const validateUpdateUser = async (req, res, next) => {
             req.body.password = await bcrypt.hash(password, saltRounds);
         }
 
-        // Kiểm tra xem name hoặc email có bị trùng lặp với người dùng khác không
+        // Kiểm tra xem username hoặc email có bị trùng lặp với người dùng khác không
         const existingUser = await User.findOne({
-            $or: [{ name }, { email }],
+            $or: [{ username }, { email }],
             _id: { $ne: userId },
         });
 
         if (existingUser) {
-            if (existingUser.name === name) {
-                return res.status(400).json({ error: 'name already in use' });
+            if (existingUser.username === username) {
+                return res.status(400).json({ error: 'username already in use' });
             }
             if (existingUser.email === email) {
                 return res.status(400).json({ error: 'Email already in use' });
@@ -185,18 +185,18 @@ const refreshAccessToken = async (req, res) => {
     }
 
     try {
-        const user = await User.findById(decoded.id);
-        if (!user) {
-            return res.status(404).json({ error: 'User not found' });
+        const account = await Account.findById(decoded.id);
+        if (!account) {
+            return res.status(404).json({ error: 'account not found' });
         }
 
         const newAccessToken = generateAccessToken({
-            id: user._id,
-            role: user.role,
+            id: account._id,
+            role: account.role,
         });
 
-        user.access_token = newAccessToken;
-        await user.save();
+        account.access_token = newAccessToken;
+        await account.save();
 
         res.status(200).json({ accessToken: newAccessToken });
     } catch (error) {
@@ -217,7 +217,7 @@ const verifyToken = (req, res, next) => {
         if (err) {
             return res.status(403).json({ error: 'Invalid or expired token' });
         }
-        req.user = { id: decoded.id, role: decoded.role };
+        req.account = { id: decoded.id, role: decoded.role };
 
         next();
     });
@@ -225,7 +225,7 @@ const verifyToken = (req, res, next) => {
 
 // Middleware yêu cầu người dùng có vai trò admin
 const requireAdmin = (req, res, next) => {
-    if (req.user.role !== 'admin') {
+    if (req.account.role !== 'admin') {
         return res.status(403).json({ error: 'Access denied: admin only' });
     }
     next();
@@ -233,7 +233,7 @@ const requireAdmin = (req, res, next) => {
 
 // Middleware cho phép admin hoặc chính người dùng truy cập
 const requireSelfOrAdmin = (req, res, next) => {
-    if (req.user.role !== 'admin' && req.params.id !== req.user.id.toString()) {
+    if (req.account.role !== 'admin' && req.params.id !== req.account.id.toString()) {
         return res.status(403).json({ error: 'Access denied: you can only view your own account' });
     }
     next();

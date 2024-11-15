@@ -9,10 +9,6 @@ const FriendsSchema = new Schema({
     },
     friendSince: {
         type: Date,
-        required: true,
-    },
-    lastInteraction: {
-        type: Date,
     },
     status: {
         type: String,
@@ -24,6 +20,9 @@ const GameLibrarySchema = new Schema({
     gameId: {
         type: Schema.Types.ObjectId,
         required: true,
+    },
+    title: {
+        type: String,
     },
     lastPlayed: {
         type: Date,
@@ -39,10 +38,10 @@ const GameLibrarySchema = new Schema({
 // Schema cho Player
 const PlayerSchema = new Schema(
     {
-        playerId: {
-            type: Schema.Types.ObjectId,
-            required: true,
-        },
+        fullName: {
+            type: String,
+        }
+        ,
         avatar: {
             type: String,
         },

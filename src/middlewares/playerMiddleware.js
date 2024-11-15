@@ -2,13 +2,13 @@ const jwt = require('jsonwebtoken');
 
 // check if all required fields are provided
 const validateUpdatePlayer = (req, res, next) => {
-    const { name, email, phone, address, avatar, gender, dayOfBirth } = req.body;
+    const { fullName, username, email, phone, address, avatar, gender, dayOfBirth } = req.body;
     const userId = req.params.id;
 
     if (!userId) {
         return res.status(400).json({ error: 'User ID is required' });
     }
-    if (!name && !email && !phone && !address && !avatar && !gender && !dayOfBirth) {
+    if (!fullName && !username && !email && !phone && !address && !avatar && !gender && !dayOfBirth) {
         return res.status(400).json({ error: 'At least one field must be provided for update' });
     }
 
@@ -41,7 +41,7 @@ const verifyToken = (req, res, next) => {
         if (err) {
             return res.status(403).json({ error: 'Invalid or expired token' });
         }
-        req.user = { id: decoded.id, role: decoded.role, playerId: decoded.userId };
+        req.account = { id: decoded.id, role: decoded.role, playerId: decoded.userId };
 
         next();
     });
@@ -49,7 +49,7 @@ const verifyToken = (req, res, next) => {
 
 // Middleware yêu cầu người dùng có vai trò admin
 const requireAdmin = (req, res, next) => {
-    if (req.user.role !== 'admin') {
+    if (req.account.role !== 'admin') {
         return res.status(403).json({ error: 'Access denied: admin only' });
     }
     next();
@@ -57,7 +57,7 @@ const requireAdmin = (req, res, next) => {
 
 // Middleware cho phép admin hoặc chính người dùng truy cập
 const requireSelfOrAdmin = (req, res, next) => {
-    if (req.user.role !== 'admin' && req.params.id !== req.user.playerId.toString()) {
+    if (req.account.role !== 'admin' && req.params.id !== req.account.playerId.toString()) {
         return res.status(403).json({ error: 'Access denied: you can only view your own account' });
     }
     next();
