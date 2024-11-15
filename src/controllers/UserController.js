@@ -1,4 +1,4 @@
-const User = require('../models/User');
+const User = require('../models/Account');
 const Player = require('../models/Player');
 
 class UserController {

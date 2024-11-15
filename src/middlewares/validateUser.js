@@ -1,7 +1,6 @@
-const User = require('../models/User');
+const User = require('../models/Account');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const dotenv = require('dotenv');
 
 const { generateAccessToken, generateRefreshToken, verifyRefreshToken } = require('./jwtAuth');
 

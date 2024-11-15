@@ -1,5 +1,5 @@
 const Player = require('../models/Player');
-const User = require('../models/User');
+const User = require('../models/Account');
 
 class PlayerController {
     // [GET] /api/player/get-all
